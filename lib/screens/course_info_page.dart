@@ -256,7 +256,9 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     required UserNotifier userNotifier,
     required HomePageNotifier homePageNotifier,
   }) {
-    if (_courseNotifier.isHourlyLimitReached == true) {
+    if (db.getTotalWeeklyHours(userNotifier.userCourseIds, _courseNotifier) +
+        courseNotifier.currentCourse.hoursPerWeek >20) {
+      print('EXCEEDED!!!!!!!!!!!!!!!!!!!!!');
       return const AndroidLimitationDialog(
         preReqs: '',
         message:
@@ -292,7 +294,8 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     required HomePageNotifier homePageNotifier,
     required LessonNotifier lessonNotifier,
   }) {
-    if (_courseNotifier.isHourlyLimitReached == true) {
+    if (db.getTotalWeeklyHours(userNotifier.userCourseIds, _courseNotifier) +
+        courseNotifier.currentCourse.hoursPerWeek >20) {
       return IOSLimitationDialog(
         preReqs: '',
         message:
@@ -332,7 +335,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
    _setConflictState(){
     Navigator.pop(context);
     setState(() {
-      _userNotifier.isConflict =false;
+      _userNotifier.isConflict = false;
       print('called');
       _userNotifier.getCourseIds();
       print(_userNotifier.isConflict);

@@ -264,13 +264,12 @@ class DatabaseManager {
           throw Exception("Course conflicts with enrolled lessons.");
         } else if (totalWeeklyHours +
                 courseNotifier.currentCourse.hoursPerWeek >
-            19) {
+            20) {
           print("Weekly Hours Check Ran");
           courseNotifier.isHourlyLimitReached = true;
           throw Exception(
               "Total weekly hours exceed 20. Please complete some courses before adding more.");
         } else {
-          print("Else statement Ran");
           DocumentReference docRef =
               FirebaseFirestore.instance.collection("Users").doc(docId);
           print(docId);
@@ -445,22 +444,27 @@ class DatabaseManager {
     List<Lesson> _lessons = [];
     await updateLessonDates(userNotifier.userCourseIds);
 
-    final coursesQuery =
-        courseCollection.where('courseId', whereIn: userCourses);
-    final coursesSnapshot = await coursesQuery.get();
+    if (userCourses.isNotEmpty) {
+      final coursesQuery =
+      courseCollection.where('courseId', whereIn: userCourses);
 
-    for (final courseDoc in coursesSnapshot.docs) {
-      final courseLessonsRef = courseDoc.reference.collection('Lessons');
-      final snapshot = await courseLessonsRef.get();
+      final coursesSnapshot = await coursesQuery.get();
 
-      for (var document in snapshot.docs) {
-        //final data = document as Map<String, dynamic>;
-        Lesson lesson = Lesson.fromMap(document.data());
-        //print(lesson.lessonName);
-        _lessons.add(lesson);
+
+      for (final courseDoc in coursesSnapshot.docs) {
+        final courseLessonsRef = courseDoc.reference.collection('Lessons');
+        final snapshot = await courseLessonsRef.get();
+
+        for (var document in snapshot.docs) {
+          //final data = document as Map<String, dynamic>;
+          Lesson lesson = Lesson.fromMap(document.data());
+          //print(lesson.lessonName);
+          _lessons.add(lesson);
+        }
+        lessonNotifier.userLessonsList = _lessons;
       }
-      lessonNotifier.userLessonsList = _lessons;
     }
+
 
     return _lessons;
     // print(lessonNotifier.lessonsList);
