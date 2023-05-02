@@ -63,9 +63,8 @@ class IOSConfirmationDialog extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius:
                     BorderRadius.circular(5)),
-                content: const Center(
-                    child: Text(
-                      'Enrolment successful',
+                content:  const Center(
+                    child: Text('Enrolment successful',
                       style: TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold),

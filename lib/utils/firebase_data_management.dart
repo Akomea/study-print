@@ -203,16 +203,11 @@ class DatabaseManager {
         currentLessons.add(lesson);
       }
     }
-    for (var lesson in currentLessons) {
-      print('current lessons: ${lesson.lessonName}');
-    }
 
     for (var userLesson in userLessonsList) {
-      print(
-          'User Lesson Name: ${userLesson.lessonName} and ${userLesson.courseId} and time: ${userLesson.startTime!.toDate()}');
       for (var currentLesson in currentLessons) {
-        print(
-            "Current Lesson name: ${currentLesson.lessonName} and id: ${currentLesson.courseId} and time:${currentLesson.startTime!.toDate()} ");
+        // print(
+        //     "Current Lesson name: ${currentLesson.lessonName} and id: ${currentLesson.courseId} and time:${currentLesson.startTime!.toDate()} ");
         if ((userLesson.startTime!.toDate().isBefore(currentLesson.endTime!.toDate()) &&
             userLesson.endTime!.toDate().isAfter(currentLesson.startTime!.toDate()))) {
           return true;
@@ -231,6 +226,31 @@ class DatabaseManager {
     return false;
   }
 
+  Future<bool> checkCourseConflicts(UserNotifier userNotifier,
+      CourseNotifier courseNotifier, LessonNotifier lessonNotifier) async {
+    var myUser = await FirebaseFirestore.instance
+        .collection("Users")
+        .where("uid", isEqualTo: user?.uid)
+        .get();
+
+    if (myUser.docs.isNotEmpty) {
+      var ids = userNotifier.getCourseIds();
+
+      var allLessonsList =
+      await getAllLessons(ids, lessonNotifier, userNotifier);
+      var userLessonsList =
+      await getUserLessons(ids, lessonNotifier, userNotifier);
+
+      return checkConflicts(
+          allLessonsList, userLessonsList, courseNotifier.currentCourse);
+    }
+
+    return false;
+  }
+
+
+
+
   Future<void> updateUserCourses(UserNotifier userNotifier,
       CourseNotifier courseNotifier, LessonNotifier lessonNotifier) async {
       var myUser = await FirebaseFirestore.instance
@@ -248,9 +268,6 @@ class DatabaseManager {
         var userLessonsList =
             await getUserLessons(ids, lessonNotifier, userNotifier);
 
-        print(allLessonsList);
-        print(userLessonsList);
-
         int totalWeeklyHours = getTotalWeeklyHours(ids, courseNotifier);
 
         if (checkConflicts(
@@ -259,20 +276,16 @@ class DatabaseManager {
               'checkConflicts decision: ${checkConflicts(allLessonsList, userLessonsList, courseNotifier.currentCourse)}');
           // ids.remove(courseNotifier.currentCourse.courseId);
           userNotifier.isConflict = true;
-
-          print('_userNotifier.isConflict: ${userNotifier.isConflict}');
           throw Exception("Course conflicts with enrolled lessons.");
         } else if (totalWeeklyHours +
                 courseNotifier.currentCourse.hoursPerWeek >
             20) {
-          print("Weekly Hours Check Ran");
           courseNotifier.isHourlyLimitReached = true;
           throw Exception(
               "Total weekly hours exceed 20. Please complete some courses before adding more.");
         } else {
           DocumentReference docRef =
               FirebaseFirestore.instance.collection("Users").doc(docId);
-          print(docId);
           ids.add(courseNotifier.currentCourse.courseId);
           userNotifier.userCourseIds = ids;
           await docRef.update({"courses": ids});
@@ -389,7 +402,6 @@ class DatabaseManager {
         for (var lessonDoc in querySnapshot.docs) {
           final startDate =
               (lessonDoc.data()['startTime'] as Timestamp).toDate();
-          print(startDate);
           if (startDate.isBefore(now)) {
             final elapsedWeeks = currentWeek - weekNumber(startDate);
             final newStartDate =

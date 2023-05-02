@@ -49,9 +49,21 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
   Image img = Image.asset('assets/images/c2.jpg');
   String videoUrl = '';
   var userCourses;
+  final ValueNotifier<bool?> conflictCheckResult = ValueNotifier<bool?>(null);
+
 
   final ScrollController _controller =
       ScrollController(initialScrollOffset: 60.w);
+
+
+  Future<void> _checkForConflict() async {
+    // Call the checkCourseConflicts function or any other asynchronous conflict check
+    bool result = await _db.checkCourseConflicts(_userNotifier, _courseNotifier, _lessonNotifier);
+    conflictCheckResult.value = result;
+  }
+
+
+
 
   @override
   void initState() {
@@ -65,6 +77,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     getNumLessons();
     getClassmates();
     userCourses = _userNotifier.getCourseIds();
+    _checkForConflict();
 
     recommendations = getRecommendation(
         _courseNotifier.courseList, _courseNotifier.currentCourse.prereqs);
@@ -166,86 +179,102 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     return formattedCourses;
   }
 
+  Widget _buildDialog() {
+    return ValueListenableBuilder<bool?>(
+      valueListenable: conflictCheckResult,
+      builder: (BuildContext context, bool? hasConflict, Widget? child) {
+        if (hasConflict == null) {
+          return const CircularProgressIndicator(); // Show a loading indicator while waiting for data
+        } else {
+          // Your previous code for showing dialogs, using hasConflict as the conflict status
+          var preReqs = formatPrerequisites(_courseNotifier.currentCourse.prereqs,
+              _courseNotifier.courseList, _userNotifier.userCourseIds);
+          if (userCourses.contains(_courseNotifier.currentCourse.courseId)) {
+            return GradientButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    elevation: 1,
+                    behavior: SnackBarBehavior.fixed,
+                    backgroundColor: kKindaGreen,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5)),
+                    content: const Center(
+                        child: Text(
+                          "Yayy! Course Completed!",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 15.0,
+                              fontFamily: "Robots",
+                              fontWeight: FontWeight.bold),
+                        )),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+              buttonText: 'Complete Course',
+            );
+          } else {
+            return GradientButton(
+              onPressed: () {
+                if (_db.getTotalWeeklyHours(
+                    _userNotifier.userCourseIds, _courseNotifier) +
+                    _courseNotifier.currentCourse.hoursPerWeek >
+                    19) {
+                  _courseNotifier.isHourlyLimitReached = true;
+                }
+                // _homePageNotifier.isStateChanged = true;
+                final skillLevels = {0: 'beginner', 1: 'intermediate', 2: 'advanced'};
+                final userLevel = _userNotifier.studentLevel;
+                final courseLevel = _courseNotifier.currentCourse.level.toLowerCase();
+                final courseLevelIndex = skillLevels.entries
+                    .firstWhere((entry) => entry.value == courseLevel)
+                    .key;
+                final courseLevelString = skillLevels[courseLevelIndex];
+                bool isMatching = false;
+                print('courseLevelString: $courseLevelString');
+                print('skillLevels[userLevel]: ${skillLevels[userLevel]}');
+                if (courseLevelIndex <= userLevel) {
+                  isMatching = true;
+                  print('isMatching $isMatching');
+                }
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    if (Platform.isAndroid) {
+                      return androidDialog(
+                        courseNotifier: _courseNotifier,
+                        preReqs: preReqs,
+                        isMatching: isMatching,
+                        db: _db,
+                        userNotifier: _userNotifier,
+                        homePageNotifier: _homePageNotifier,
+                      );
+                    } else {
+                      return iosDialog(
+                        hasConflict: hasConflict,
+                        courseNotifier: _courseNotifier,
+                        preReqs: preReqs,
+                        isMatching: isMatching,
+                        db: _db,
+                        userNotifier: _userNotifier,
+                        homePageNotifier: _homePageNotifier, lessonNotifier: _lessonNotifier,
+                      );
+                    }
+                  },
+                );
+              },
+              buttonText: 'Enroll',
+            );
+          }
+        }
+      },
+    );
+
+  }
+
   Widget _conditionalBottomButton() {
-    var preReqs = formatPrerequisites(_courseNotifier.currentCourse.prereqs,
-        _courseNotifier.courseList, _userNotifier.userCourseIds);
-    if (userCourses.contains(_courseNotifier.currentCourse.courseId)) {
-      return GradientButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              elevation: 1,
-              behavior: SnackBarBehavior.fixed,
-              backgroundColor: kKindaGreen,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5)),
-              content: const Center(
-                  child: Text(
-                "Yayy! Course Completed!",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 15.0,
-                    fontFamily: "Robots",
-                    fontWeight: FontWeight.bold),
-              )),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        },
-        buttonText: 'Complete Course',
-      );
-    } else {
-      return GradientButton(
-        onPressed: () {
-          if (_db.getTotalWeeklyHours(
-                      _userNotifier.userCourseIds, _courseNotifier) +
-                  _courseNotifier.currentCourse.hoursPerWeek >
-              19) {
-            _courseNotifier.isHourlyLimitReached = true;
-          }
-          // _homePageNotifier.isStateChanged = true;
-          final skillLevels = {0: 'beginner', 1: 'intermediate', 2: 'advanced'};
-          final userLevel = _userNotifier.studentLevel;
-          final courseLevel = _courseNotifier.currentCourse.level.toLowerCase();
-          final courseLevelIndex = skillLevels.entries
-              .firstWhere((entry) => entry.value == courseLevel)
-              .key;
-          final courseLevelString = skillLevels[courseLevelIndex];
-          bool isMatching = false;
-          print('courseLevelString: $courseLevelString');
-          print('skillLevels[userLevel]: ${skillLevels[userLevel]}');
-          if (courseLevelIndex <= userLevel) {
-            isMatching = true;
-            print('isMatching $isMatching');
-          }
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              if (Platform.isAndroid) {
-                return androidDialog(
-                  courseNotifier: _courseNotifier,
-                  preReqs: preReqs,
-                  isMatching: isMatching,
-                  db: _db,
-                  userNotifier: _userNotifier,
-                  homePageNotifier: _homePageNotifier,
-                );
-              } else {
-                return iosDialog(
-                  courseNotifier: _courseNotifier,
-                  preReqs: preReqs,
-                  isMatching: isMatching,
-                  db: _db,
-                  userNotifier: _userNotifier,
-                  homePageNotifier: _homePageNotifier, lessonNotifier: _lessonNotifier,
-                );
-              }
-            },
-          );
-        },
-        buttonText: 'Enroll',
-      );
-    }
+    return _buildDialog();
   }
 
   Widget androidDialog({
@@ -293,7 +322,9 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     required UserNotifier userNotifier,
     required HomePageNotifier homePageNotifier,
     required LessonNotifier lessonNotifier,
+    required bool? hasConflict,
   }) {
+    print('userNotifier.isConflict == true: ${userNotifier.isConflict}');
     if (db.getTotalWeeklyHours(userNotifier.userCourseIds, _courseNotifier) +
         courseNotifier.currentCourse.hoursPerWeek >20) {
       return IOSLimitationDialog(
@@ -303,7 +334,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
         onTap: _setConflictState,
       );
     }
-    if (_userNotifier.isConflict == true) {
+    if (hasConflict??false) {
       return IOSLimitationDialog(
         preReqs: '',
         message:
