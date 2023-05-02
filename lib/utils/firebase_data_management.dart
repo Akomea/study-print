@@ -214,17 +214,32 @@ class DatabaseManager {
         }
       }
     }
-    // for (var userLesson in userLessonsList) {
-    //   if (currentLessons.any((cl) {
-    //     cl.startTime == userLesson.startTime;
-    //     return
-    //   }
-    //       )) {
-    //     return true;
-    //   }
-    // }
     return false;
   }
+
+  String conflictMessage(List<Lesson> allLessonsList, List<Lesson> userLessonsList,
+      Course currentCourse) {
+    List<Lesson> currentLessons = [];
+    for (var lesson in allLessonsList) {
+      if (lesson.courseId == currentCourse.courseId) {
+        currentLessons.add(lesson);
+      }
+    }
+
+    for (var userLesson in userLessonsList) {
+      for (var currentLesson in currentLessons) {
+        if ((userLesson.startTime!.toDate().isBefore(currentLesson.endTime!.toDate()) &&
+            userLesson.endTime!.toDate().isAfter(currentLesson.startTime!.toDate()))) {
+          DateFormat dateFormat = DateFormat('yyyy-MM-dd hh:mm');
+          DateFormat endDateFormat = DateFormat('hh:mm');
+          return '${currentLesson.lessonName} conflicts with ${userLesson.lessonName} (${dateFormat.format(userLesson.startTime!.toDate())} - ${endDateFormat.format(userLesson.endTime!.toDate())})';
+        }
+      }
+    }
+    return '';
+  }
+
+
 
   Future<bool> checkCourseConflicts(UserNotifier userNotifier,
       CourseNotifier courseNotifier, LessonNotifier lessonNotifier) async {

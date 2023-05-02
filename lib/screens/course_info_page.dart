@@ -24,7 +24,7 @@ import '../controllers/user_notifier.dart';
 import '../models/course_data_model.dart';
 import '../routes/routes.dart';
 import '../shared_widgets/course_card.dart';
-import '../shared_widgets/disabled_gradient_button.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../shared_widgets/ios_confirmation_dialog.dart';
 import '../shared_widgets/ios_limitation_dialog.dart';
 import '../utils/enums.dart';
@@ -50,6 +50,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
   Image img = Image.asset('assets/images/c2.jpg');
   String videoUrl = '';
   var userCourses;
+  String _conflictMessage = '';
   final ValueNotifier<bool?> conflictCheckResult = ValueNotifier<bool?>(null);
 
 
@@ -60,6 +61,9 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
   Future<void> _checkForConflict() async {
     // Call the checkCourseConflicts function or any other asynchronous conflict check
     bool result = await _db.checkCourseConflicts(_userNotifier, _courseNotifier, _lessonNotifier);
+    var all = await _db.getAllLessons(userCourses, _lessonNotifier, _userNotifier);
+    var userLessons = await _db.getUserLessons(userCourses, _lessonNotifier, _userNotifier);
+    _conflictMessage = _db.conflictMessage(all, userLessons, _courseNotifier.currentCourse);
     conflictCheckResult.value = result;
   }
 
@@ -179,17 +183,35 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
 
     return formattedCourses;
   }
+  bool _canEnroll() {
+    final totalWeeklyHours = _db.getTotalWeeklyHours(_userNotifier.userCourseIds, _courseNotifier);
+    return totalWeeklyHours + _courseNotifier.currentCourse.hoursPerWeek <= 20;
+  }
+
+  bool _alreadyEnrolled(){
+    return userCourses.contains(_courseNotifier.currentCourse.courseId);
+  }
+
+  bool _isCourseLevelMatching() {
+    final skillLevels = {0: 'beginner', 1: 'intermediate', 2: 'advanced'};
+    final userLevel = _userNotifier.studentLevel;
+    final courseLevel = _courseNotifier.currentCourse.level.toLowerCase();
+    final courseLevelIndex = skillLevels.entries.firstWhere((entry) => entry.value == courseLevel).key;
+
+    return courseLevelIndex <= userLevel;
+  }
+
 
   Widget _buildDialog() {
     return ValueListenableBuilder<bool?>(
       valueListenable: conflictCheckResult,
       builder: (BuildContext context, bool? hasConflict, Widget? child) {
         if (hasConflict == null) {
-          return DisabledGradientButton(buttonText: 'Please wait...', onPressed: ()=>{});// Show a loading indicator while waiting for data
+          return SpinKitThreeBounce(color: kPrimaryColour,);// Show a loading indicator while waiting for data
         } else {
           var preReqs = formatPrerequisites(_courseNotifier.currentCourse.prereqs,
               _courseNotifier.courseList, _userNotifier.userCourseIds);
-          if (userCourses.contains(_courseNotifier.currentCourse.courseId)) {
+          if (_alreadyEnrolled()) {
             return GradientButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -217,27 +239,6 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
           } else {
             return GradientButton(
               onPressed: () {
-                if (_db.getTotalWeeklyHours(
-                    _userNotifier.userCourseIds, _courseNotifier) +
-                    _courseNotifier.currentCourse.hoursPerWeek >
-                    19) {
-                  _courseNotifier.isHourlyLimitReached = true;
-                }
-                // _homePageNotifier.isStateChanged = true;
-                final skillLevels = {0: 'beginner', 1: 'intermediate', 2: 'advanced'};
-                final userLevel = _userNotifier.studentLevel;
-                final courseLevel = _courseNotifier.currentCourse.level.toLowerCase();
-                final courseLevelIndex = skillLevels.entries
-                    .firstWhere((entry) => entry.value == courseLevel)
-                    .key;
-                final courseLevelString = skillLevels[courseLevelIndex];
-                bool isMatching = false;
-                print('courseLevelString: $courseLevelString');
-                print('skillLevels[userLevel]: ${skillLevels[userLevel]}');
-                if (courseLevelIndex <= userLevel) {
-                  isMatching = true;
-                  print('isMatching $isMatching');
-                }
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
@@ -245,7 +246,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
                       return androidDialog(
                         courseNotifier: _courseNotifier,
                         preReqs: preReqs,
-                        isMatching: isMatching,
+                        isMatching: _isCourseLevelMatching(),
                         db: _db,
                         userNotifier: _userNotifier,
                         homePageNotifier: _homePageNotifier,
@@ -255,7 +256,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
                         hasConflict: hasConflict,
                         courseNotifier: _courseNotifier,
                         preReqs: preReqs,
-                        isMatching: isMatching,
+                        isMatching: _isCourseLevelMatching(),
                         db: _db,
                         userNotifier: _userNotifier,
                         homePageNotifier: _homePageNotifier, lessonNotifier: _lessonNotifier,
@@ -270,7 +271,6 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
         }
       },
     );
-
   }
 
   Widget _conditionalBottomButton() {
@@ -285,8 +285,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     required UserNotifier userNotifier,
     required HomePageNotifier homePageNotifier,
   }) {
-    if (db.getTotalWeeklyHours(userNotifier.userCourseIds, _courseNotifier) +
-        courseNotifier.currentCourse.hoursPerWeek >20) {
+    if (!_canEnroll()) {
       return const AndroidLimitationDialog(
         preReqs: '',
         message:
@@ -323,22 +322,20 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     required LessonNotifier lessonNotifier,
     required bool? hasConflict,
   }) {
-    print('userNotifier.isConflict == true: ${userNotifier.isConflict}');
-    if (db.getTotalWeeklyHours(userNotifier.userCourseIds, _courseNotifier) +
-        courseNotifier.currentCourse.hoursPerWeek >20) {
+    if (!_canEnroll()) {
       return IOSLimitationDialog(
         preReqs: '',
         message:
             'Enrolling on this course will cause you to exceed the 20 hours weekly limit. Please complete some courses before adding more.',
-        onTap: _setConflictState,
+        onTap: ()=>{Navigator.pop(context)},
       );
     }
     if (hasConflict??false) {
       return IOSLimitationDialog(
         preReqs: '',
         message:
-        'Course conflicts with enrolled lessons.',
-        onTap: _setConflictState,
+        _conflictMessage,
+        onTap: ()=>{Navigator.pop(context)},
       );
     }
     if (preReqs.isNotEmpty && !isMatching) {
@@ -347,7 +344,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
         message:
             'Based on your skill level and this course\'s prerequisite requirements, '
             'we recommend that you take ',
-        onTap: _setConflictState,
+        onTap: ()=>{Navigator.pop(context)},
       );
     } else {
       return IOSConfirmationDialog(
@@ -361,16 +358,6 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
       );
     }
   }
-
-   _setConflictState(){
-    Navigator.pop(context);
-    setState(() {
-      _userNotifier.isConflict = false;
-      print('called');
-      _userNotifier.getCourseIds();
-      print(_userNotifier.isConflict);
-    });
-   }
 
   @override
   void didChangeDependencies() {
