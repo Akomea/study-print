@@ -24,6 +24,7 @@ import '../controllers/user_notifier.dart';
 import '../models/course_data_model.dart';
 import '../routes/routes.dart';
 import '../shared_widgets/course_card.dart';
+import '../shared_widgets/disabled_gradient_button.dart';
 import '../shared_widgets/ios_confirmation_dialog.dart';
 import '../shared_widgets/ios_limitation_dialog.dart';
 import '../utils/enums.dart';
@@ -184,9 +185,8 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
       valueListenable: conflictCheckResult,
       builder: (BuildContext context, bool? hasConflict, Widget? child) {
         if (hasConflict == null) {
-          return const CircularProgressIndicator(); // Show a loading indicator while waiting for data
+          return DisabledGradientButton(buttonText: 'Please wait...', onPressed: ()=>{});// Show a loading indicator while waiting for data
         } else {
-          // Your previous code for showing dialogs, using hasConflict as the conflict status
           var preReqs = formatPrerequisites(_courseNotifier.currentCourse.prereqs,
               _courseNotifier.courseList, _userNotifier.userCourseIds);
           if (userCourses.contains(_courseNotifier.currentCourse.courseId)) {
@@ -287,7 +287,6 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
   }) {
     if (db.getTotalWeeklyHours(userNotifier.userCourseIds, _courseNotifier) +
         courseNotifier.currentCourse.hoursPerWeek >20) {
-      print('EXCEEDED!!!!!!!!!!!!!!!!!!!!!');
       return const AndroidLimitationDialog(
         preReqs: '',
         message:
