@@ -252,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                               padding: const EdgeInsets.symmetric(horizontal: 25.0),
                               child: ActiveCourseTile(valueNotifier: valueNotifier, courseImage: 'assets/images/html.jpg', courseName: 'Symmetry Theory', remainingLessons: 10,),
                             ),
-                             CategoryTitle(text: forYouList.isEmpty? 'Top Picks':'For You', onPressed: (){
+                             CategoryTitle(text: forYouList.isEmpty? 'Featured':'For You', onPressed: (){
                                homePageNotifier.isAllSelected = true;
                                homePageNotifier.tabIndex = 0;
                                Navigator.pushNamed(context, PageRoutes.courses);

@@ -22,9 +22,8 @@ class _TimetableState extends State<Timetable> {
   final DatabaseManager _db = DatabaseManager();
   late final LessonNotifier lessonNotifier;
   late final UserNotifier userNotifier;
-  late List<Lesson> lessons = [];
   var courses;
-
+  List<Lesson> lessonsToday = [];
 
   @override
   void initState() {
@@ -38,17 +37,17 @@ class _TimetableState extends State<Timetable> {
   }
 
   getLessons() async {
-    await _db.getUserLessons(courses,lessonNotifier, userNotifier)
+    await _db
+        .getUserLessons(courses, lessonNotifier, userNotifier)
         .then((value) {
-          setState(() {
-            lessons = value;
-          });
+      lessonNotifier.userLessonsList = value;
     });
-    // await _db.updateLessonDates(courses);
   }
 
   @override
   Widget build(BuildContext context) {
+    LessonNotifier lessonNotifier = context.watch<LessonNotifier>();
+    lessonsToday = filterLessonsForToday(lessonNotifier.userLessonsList);
     // print(lessons);
     return Scaffold(
       appBar: AppBar(
@@ -73,14 +72,14 @@ class _TimetableState extends State<Timetable> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         'Lessons',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       Flexible(
-                        child: Text('3 lessons today'),
+                        child: Text('${lessonsToday.length} lessons today'),
                       )
                     ],
                   ),
@@ -89,14 +88,17 @@ class _TimetableState extends State<Timetable> {
                   height: 160.h,
                   width: MediaQuery.of(context).size.width,
                   child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: lessonNotifier.userLessonsList.length,
-                      itemBuilder: (context,index){
-                        return LessonCard(title: lessonNotifier.userLessonsList[index].lessonName,
-                          startTime: DateFormat.Hm().format(lessonNotifier.userLessonsList[index].startTime!.toDate()),
-                          endTime: DateFormat.Hm().format(lessonNotifier.userLessonsList[index].endTime!.toDate()));
-                      }
-                  ),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: lessonsToday.length,
+                      itemBuilder: (context, index) {
+                        var lesson = lessonsToday[index];
+                        return LessonCard(
+                            title: lesson.lessonName,
+                            startTime: DateFormat.Hm()
+                                .format(lesson.startTime!.toDate()),
+                            endTime: DateFormat.Hm()
+                                .format(lesson.endTime!.toDate()));
+                      }),
                 ),
                 Expanded(
                   child: Padding(
@@ -119,7 +121,7 @@ class _TimetableState extends State<Timetable> {
                               const BorderRadius.all(Radius.circular(4)),
                           shape: BoxShape.rectangle,
                         ),
-                        dataSource: MeetingDataSource(_getDataSource()),
+                        dataSource: MeetingDataSource(_getDataSource(lessonNotifier)),
                         monthViewSettings: const MonthViewSettings(
                             showAgenda: true,
                             appointmentDisplayMode:
@@ -129,7 +131,6 @@ class _TimetableState extends State<Timetable> {
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
@@ -138,16 +139,13 @@ class _TimetableState extends State<Timetable> {
     );
   }
 
-  List<Meeting> _getDataSource() {
+  List<Meeting> _getDataSource(LessonNotifier lessonNotifier) {
     final List<Meeting> meetings = <Meeting>[];
-    final DateTime today = DateTime.now();
-    final DateTime startTime = DateTime(today.year, today.month, today.day, 9);
-    final DateTime endTime = startTime.add(const Duration(hours: 2));
 
-    for(var lesson in lessons){
-      var startTime = lesson.startTime?.toDate();
-      var endTime = lesson.endTime?.toDate();
-      meetings.add(Meeting(lesson.lessonName, startTime!, endTime!,
+    for (var lesson in lessonNotifier.userLessonsList) {
+      var startTime = lesson.startTime!.toDate();
+      var endTime = lesson.endTime!.toDate();
+      meetings.add(Meeting(lesson.lessonName, startTime, endTime,
           const Color(0xFF0F8644), false));
     }
     return meetings;
@@ -221,20 +219,23 @@ class Meeting {
   /// IsAllDay which is equivalent to isAllDay property of [Appointment].
   bool isAllDay;
 }
+
 class LessonCard extends StatelessWidget {
   final String? title;
   final String startTime;
   final String endTime;
+
   const LessonCard({
-    Key? key, required this.title, required this.startTime, required this.endTime,
+    Key? key,
+    required this.title,
+    required this.startTime,
+    required this.endTime,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:  EdgeInsets.only(
-          bottom: 10.0.h, right: 10.h
-      ),
+      padding: EdgeInsets.only(bottom: 10.0.h, right: 10.h),
       child: Container(
         height: 160.h,
         padding: const EdgeInsets.all(15),
@@ -251,8 +252,7 @@ class LessonCard extends StatelessWidget {
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(75.0),
                       child: ImageIcon(
-                        const AssetImage(
-                            'assets/images/teacher.png'),
+                        const AssetImage('assets/images/teacher.png'),
                         color: kTeal,
                       ))),
             ),
@@ -261,7 +261,7 @@ class LessonCard extends StatelessWidget {
                 top: 10,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children:  [
+                  children: [
                     Text(
                       title!,
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -288,11 +288,9 @@ class LessonCard extends StatelessWidget {
                         const Color(0xff408E91),
                       ),
                       elevation: MaterialStateProperty.all(0),
-                      shape: MaterialStateProperty.all<
-                          RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(10.0)))),
+                              borderRadius: BorderRadius.circular(10.0)))),
                 )),
             Positioned(
                 top: 0,
@@ -305,4 +303,15 @@ class LessonCard extends StatelessWidget {
       ),
     );
   }
+}
+
+List<Lesson> filterLessonsForToday(List<Lesson> userLessonsList) {
+  final today = DateTime.now();
+  final dateFormat = DateFormat('yyyy-MM-dd');
+
+  return userLessonsList.where((lesson) {
+    String lessonDate = dateFormat.format(lesson.startTime!.toDate());
+    String currentDate = dateFormat.format(today);
+    return lessonDate == currentDate;
+  }).toList();
 }
