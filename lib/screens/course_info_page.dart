@@ -209,6 +209,8 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
   }
 
 
+
+
   Widget _buildDialog() {
     UserNotifier userNotifier = context.watch<UserNotifier>();
     CourseNotifier courseNotifier = context.watch<CourseNotifier>();
@@ -367,6 +369,12 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
       );
     }
   }
+  void _updateWidget(Course course) {
+    // Your code to update the widget, for example, setState() if using StatefulWidget
+      _courseNotifier.currentCourse = course;
+      _alreadyEnrolled();
+  }
+
 
   @override
   void didChangeDependencies() {
@@ -374,6 +382,16 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     _userNotifier = Provider.of<UserNotifier>(context);
     _userNotifier.getStudentLevel();
   }
+  void _navigateToNextScreen(BuildContext context, Course course) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CourseInfoPage()),
+    );
+
+    // This code will be executed when you return to this screen
+    _updateWidget(course);
+  }
+
 
   Widget _courseInfo() {
     return SingleChildScrollView(
@@ -575,10 +593,10 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
                                   recommendations[index].courseName;
                               return GestureDetector(
                                 onTap: () {
+                                  var prev =  _courseNotifier.currentCourse;
                                   _courseNotifier.currentCourse =
                                       recommendations[index];
-                                  Navigator.pushNamed(
-                                      context, PageRoutes.courseInfo);
+                                  _navigateToNextScreen(context, prev);
                                 },
                                 child: CourseCard(
                                   courseTitle: courseName.length > 30
