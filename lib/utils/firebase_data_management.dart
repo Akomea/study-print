@@ -304,9 +304,12 @@ class DatabaseManager {
           'enrollmentDate': Timestamp.now(),
           'duration': courseNotifier.currentCourse.duration
         });
-        userNotifier.userCourses = userCourses;
         await docRef.update({"courses": userCourses});
+        userNotifier.userCourses = userCourses;
+        userNotifier.userCourseIds = userNotifier.getCourseIds();
+        userNotifier.isEnrolled = true;
         print('total user courses: $userCourses');
+        print('userNotifier.userCourseIds: ${userNotifier.userCourseIds}');
       }
     }
   }

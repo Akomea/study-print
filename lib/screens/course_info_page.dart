@@ -83,6 +83,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     getClassmates();
     userCourses = _userNotifier.getCourseIds();
     _checkForConflict();
+    _alreadyEnrolled();
 
     recommendations = getRecommendation(
         _courseNotifier.courseList, _courseNotifier.currentCourse.prereqs);
@@ -189,7 +190,13 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
   }
 
   bool _alreadyEnrolled(){
-    return userCourses.contains(_courseNotifier.currentCourse.courseId);
+    if(userCourses.contains(_courseNotifier.currentCourse.courseId)){
+      _userNotifier.isEnrolled = true;
+      return true;
+    }else{
+      _userNotifier.isEnrolled = false;
+      return false;
+    }
   }
 
   bool _isCourseLevelMatching() {
@@ -203,6 +210,8 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
 
 
   Widget _buildDialog() {
+    UserNotifier userNotifier = context.watch<UserNotifier>();
+    CourseNotifier courseNotifier = context.watch<CourseNotifier>();
     return ValueListenableBuilder<bool?>(
       valueListenable: conflictCheckResult,
       builder: (BuildContext context, bool? hasConflict, Widget? child) {
@@ -210,8 +219,8 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
           return SpinKitThreeBounce(color: kPrimaryColour,);// Show a loading indicator while waiting for data
         } else {
           var preReqs = formatPrerequisites(_courseNotifier.currentCourse.prereqs,
-              _courseNotifier.courseList, _userNotifier.userCourseIds);
-          if (_alreadyEnrolled()) {
+              _courseNotifier.courseList, userNotifier.userCourseIds);
+          if (userNotifier.isEnrolled) {
             return GradientButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(

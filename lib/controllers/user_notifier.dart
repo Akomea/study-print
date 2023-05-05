@@ -31,8 +31,18 @@ class UserNotifier extends ChangeNotifier {
   List _skillLevel = [];
   int _studentLevel = 0;
   bool _isConflict = false;
+  bool _isEnrolled = false;
+
+  bool get isEnrolled => _isEnrolled;
+
+  set isEnrolled(bool value) {
+    _isEnrolled = value;
+    notifyListeners();
+  }
+
   List<Map<String, dynamic>> _userCourses = [];
   List<Map<String, dynamic>> _completedCourses = [];
+
 
   bool get isConflict => _isConflict;
 
@@ -147,6 +157,7 @@ class UserNotifier extends ChangeNotifier {
         match = true;
         List<Map<String, dynamic>> userCourses = usersList[i].courses!;
         ids = userCourses.map((course) => course['courseId'] as String).toList();
+        userCourseIds =ids;
       }
     }
     if (match) {
@@ -218,6 +229,8 @@ class UserNotifier extends ChangeNotifier {
     _completedCourses = value;
     notifyListeners();
   }
+
+  List<Map<String, dynamic>> get userCourses => _userCourses;
 
   List getInterests() {
     List interests = [];
