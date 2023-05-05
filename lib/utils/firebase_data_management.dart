@@ -34,6 +34,7 @@ class DatabaseManager {
       'email': email,
       'dateCreated': DateTime.now(),
       'courses': [],
+      'completedCourses': [],
       'interests': [],
       'studentLevel': 0,
       'avatar':
@@ -51,8 +52,7 @@ class DatabaseManager {
 
     for (var document in snapshot.docs) {
       //final data = document as Map<String, dynamic>;
-      student.UserModel user =
-          student.UserModel.fromMap(document.data() as Map<String, dynamic>);
+      student.UserModel user = student.UserModel.fromMap(document.data() as Map<String, dynamic>);
       _users.add(user);
     }
     if (snapshot.metadata.isFromCache) {
@@ -268,45 +268,46 @@ class DatabaseManager {
 
   Future<void> updateUserCourses(UserNotifier userNotifier,
       CourseNotifier courseNotifier, LessonNotifier lessonNotifier) async {
-      var myUser = await FirebaseFirestore.instance
-          .collection("Users")
-          .where("uid", isEqualTo: user?.uid)
-          .get();
-      if (myUser.docs.isNotEmpty) {
-        var docId = myUser.docs.first.id;
+    var myUser = await FirebaseFirestore.instance
+        .collection("Users")
+        .where("uid", isEqualTo: user?.uid)
+        .get();
+    if (myUser.docs.isNotEmpty) {
+      var docId = myUser.docs.first.id;
 
-        var ids = userNotifier.getCourseIds();
+      var userCourses = userNotifier.getUserCourses();
 
+      var allLessonsList =
+      await getAllLessons(userCourses, lessonNotifier, userNotifier);
+      var userLessonsList =
+      await getUserLessons(userCourses, lessonNotifier, userNotifier);
 
-        var allLessonsList =
-            await getAllLessons(ids, lessonNotifier, userNotifier);
-        var userLessonsList =
-            await getUserLessons(ids, lessonNotifier, userNotifier);
+      int totalWeeklyHours = getTotalWeeklyHours(userNotifier.userCourseIds, courseNotifier);
 
-        int totalWeeklyHours = getTotalWeeklyHours(ids, courseNotifier);
-
-        if (checkConflicts(
-            allLessonsList, userLessonsList, courseNotifier.currentCourse)) {
-          print(
-              'checkConflicts decision: ${checkConflicts(allLessonsList, userLessonsList, courseNotifier.currentCourse)}');
-          // ids.remove(courseNotifier.currentCourse.courseId);
-          userNotifier.isConflict = true;
-          throw Exception("Course conflicts with enrolled lessons.");
-        } else if (totalWeeklyHours +
-                courseNotifier.currentCourse.hoursPerWeek >
-            20) {
-          courseNotifier.isHourlyLimitReached = true;
-          throw Exception(
-              "Total weekly hours exceed 20. Please complete some courses before adding more.");
-        } else {
-          DocumentReference docRef =
-              FirebaseFirestore.instance.collection("Users").doc(docId);
-          ids.add(courseNotifier.currentCourse.courseId);
-          userNotifier.userCourseIds = ids;
-          await docRef.update({"courses": ids});
-          print('total user courses: $ids');
-        }
-
+      if (checkConflicts(
+          allLessonsList, userLessonsList, courseNotifier.currentCourse)) {
+        print(
+            'checkConflicts decision: ${checkConflicts(allLessonsList, userLessonsList, courseNotifier.currentCourse)}');
+        userNotifier.isConflict = true;
+        throw Exception("Course conflicts with enrolled lessons.");
+      } else if (totalWeeklyHours +
+          courseNotifier.currentCourse.hoursPerWeek >
+          20) {
+        courseNotifier.isHourlyLimitReached = true;
+        throw Exception(
+            "Total weekly hours exceed 20. Please complete some courses before adding more.");
+      } else {
+        DocumentReference docRef =
+        FirebaseFirestore.instance.collection("Users").doc(docId);
+        userCourses.add({
+          'courseId': courseNotifier.currentCourse.courseId,
+          'enrollmentDate': Timestamp.now(),
+          'duration': courseNotifier.currentCourse.duration
+        });
+        userNotifier.userCourses = userCourses;
+        await docRef.update({"courses": userCourses});
+        print('total user courses: $userCourses');
+      }
     }
   }
 

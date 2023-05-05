@@ -31,6 +31,8 @@ class UserNotifier extends ChangeNotifier {
   List _skillLevel = [];
   int _studentLevel = 0;
   bool _isConflict = false;
+  List<Map<String, dynamic>> _userCourses = [];
+  List<Map<String, dynamic>> _completedCourses = [];
 
   bool get isConflict => _isConflict;
 
@@ -138,13 +140,13 @@ class UserNotifier extends ChangeNotifier {
 
   bool match = false;
 
-  List getCourseIds() {
-    List ids = [];
+  List<String> getCourseIds() {
+    List<String> ids = [];
     for (int i = 0; i < usersList.length; i++) {
       if (usersList[i].email == user?.email) {
         match = true;
-        ids = usersList[i].courses!;
-        userCourseIds = ids;
+        List<Map<String, dynamic>> userCourses = usersList[i].courses!;
+        ids = userCourses.map((course) => course['courseId'] as String).toList();
       }
     }
     if (match) {
@@ -153,6 +155,68 @@ class UserNotifier extends ChangeNotifier {
       print('user not found');
     }
     return ids;
+  }
+  List<Map<String, dynamic>> getUserCourses() {
+    List<Map<String, dynamic>> courses = [];
+    for (int i = 0; i < usersList.length; i++) {
+      if (usersList[i].email == user?.email) {
+        match = true;
+        courses = usersList[i].courses!;
+        userCourses = courses;
+      }
+    }
+    if (match) {
+      print('user found!');
+    } else {
+      print('user not found');
+    }
+    return courses;
+  }
+
+  List<String> getCompletedCourseIds() {
+    List<String> ids = [];
+    for (int i = 0; i < usersList.length; i++) {
+      if (usersList[i].email == user?.email) {
+        match = true;
+        List<Map<String, dynamic>> userCourses = usersList[i].completedCourses!;
+        ids = userCourses.map((course) => course['courseId'] as String).toList();
+      }
+    }
+    if (match) {
+      print('user found for completed!');
+    } else {
+      print('completed courses failed');
+    }
+    return ids;
+  }
+  List<Map<String, dynamic>> getCompletedCourses() {
+    List<Map<String, dynamic>> courses = [];
+    for (int i = 0; i < usersList.length; i++) {
+      if (usersList[i].email == user?.email) {
+        match = true;
+        courses = usersList[i].completedCourses!;
+        completedCourses = courses;
+      }
+    }
+    if (match) {
+      print('user found for completed courses!');
+    } else {
+      print('get completed courses failed');
+    }
+    return courses;
+  }
+
+
+  List<Map<String, dynamic>> get completedCourses => _completedCourses;
+
+  set userCourses(List<Map<String, dynamic>> value) {
+    _userCourses = value;
+    notifyListeners();
+  }
+
+  set completedCourses(List<Map<String, dynamic>> value) {
+    _completedCourses = value;
+    notifyListeners();
   }
 
   List getInterests() {
@@ -195,6 +259,18 @@ class UserNotifier extends ChangeNotifier {
 
   List<Course> filterCoursesByIds(List<Course> courses) {
     List ids = getCourseIds();
+    List<Course> filteredCourses = [];
+    for (var course in courses) {
+      //print(course.courseId);
+      if (ids.contains(course.courseId)) {
+        filteredCourses.add(course);
+      }
+    }
+    return filteredCourses;
+  }
+
+  List<Course> filterCompletedCoursesByIds(List<Course> courses) {
+    List ids = getCompletedCourseIds();
     List<Course> filteredCourses = [];
     for (var course in courses) {
       //print(course.courseId);

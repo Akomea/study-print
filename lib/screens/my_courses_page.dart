@@ -5,6 +5,7 @@ import 'package:course_select/utils/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import '../constants/constants.dart';
@@ -51,7 +52,8 @@ class _MyCoursesState extends State<MyCourses>
 
   late List<Course> displayList;
   late List<MyCourse> displayOngoingList;
-  late List<Course> myList;
+  late List<Course> displayCompletedList = [];
+  late List<Course> myList = [];
 
   void updateList(String value) {
     /// filter courses list
@@ -83,16 +85,42 @@ class _MyCoursesState extends State<MyCourses>
     });
   }
 
+  void updateCompletedList(){
+    setState(() {
+      displayCompletedList = userNotifier.filterCoursesByIds(displayList);
+    });
+  }
+
   Future getModels() {
     db.getUsers(userNotifier);
     return db.getCourses(courseNotifier);
   }
+
+  String? getCompletionDate(
+      Course course,
+      List<Map<String, dynamic>> completedCourses) {
+    DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm');
+    String courseId = course.courseId;
+
+    for (final completedCourse in completedCourses) {
+      if (courseId == completedCourse['courseId']) {
+        print('SAME ID');
+        DateTime completionDate = completedCourse['completionDate'].toDate();
+        return dateFormat.format(completionDate);
+      }else{
+        print('not SAME ID');
+      }
+    }
+    return null;
+  }
+
 
   int duplicateCount = 0;
 
   Widget _showList(int index) {
     HomePageNotifier homePageNotifier =
         Provider.of<HomePageNotifier>(context, listen: true);
+
     switch (index) {
       case 0:
         return Expanded(
@@ -248,7 +276,7 @@ class _MyCoursesState extends State<MyCourses>
         break;
       case 3:
         return Expanded(
-            child: displayOngoingList.isEmpty
+            child: displayCompletedList.isEmpty
                 ? const Center(
                     child: Text('No completed courses found...'),
                   )
@@ -256,13 +284,14 @@ class _MyCoursesState extends State<MyCourses>
                     padding: const EdgeInsets.symmetric(horizontal: 25.0),
                     child: ListView.builder(
                         scrollDirection: Axis.vertical,
-                        itemCount: displayOngoingList.length,
+                        itemCount: displayCompletedList.length,
                         itemBuilder: (context, index) {
                           return CompletedCourseTile(
-                            courseName: displayOngoingList[index].courseName,
-                            courseImage: displayOngoingList[index].courseImage,
+                            courseName: displayCompletedList[index].courseName,
+                            courseImage: displayCompletedList[index].media[1],
                             remainingLessons:
-                                displayOngoingList[index].remainingLessons,
+                            displayCompletedList[index].duration,
+                            completionDate: getCompletionDate(displayCompletedList[index], userNotifier.completedCourses)
                           );
                         }),
                   ));
@@ -329,6 +358,8 @@ class _MyCoursesState extends State<MyCourses>
     userNotifier = Provider.of<UserNotifier>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       myList = userNotifier.filterCoursesByIds(courseNotifier.courseList);
+      displayCompletedList = userNotifier.filterCompletedCoursesByIds(courseNotifier.courseList);
+      userNotifier.getCompletedCourses();
     });
 
     futureData = getModels();

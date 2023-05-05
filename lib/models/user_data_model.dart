@@ -1,37 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-///User model class with attributes which define what a user is
-class UserModel{
+class UserModel {
   String? uid;
   String? displayName;
   Timestamp? dateCreated = Timestamp.now();
   String? avatar;
   String? email;
-  List<dynamic>? courses;
+  List<Map<String, dynamic>>? courses;
+  List<Map<String, dynamic>>? completedCourses;
   List<dynamic>? interests;
   int? studentLevel;
 
-
-  ///A constructor for setting attribute values when creating a user object
-   UserModel ({
+  UserModel({
     required this.uid,
     required this.displayName,
     required this.dateCreated,
     this.avatar,
     this.email,
-     this.courses
+    this.courses,
+    this.completedCourses,
   });
 
-  ///Receives a map which matches class attributes
   UserModel.fromMap(Map<String, dynamic> data) {
     uid = data['uid'];
     displayName = data['displayName'];
     dateCreated = data['dateCreated'];
     avatar = data['avatar'];
     email = data['email'];
-    courses = data['courses'];
+    courses = (data['courses'] as List?)
+        ?.map((course) => course as Map<String, dynamic>)
+        .toList() ?? [];
+    completedCourses = (data['completedCourses'] as List?)
+        ?.map((course) => course as Map<String, dynamic>)
+        .toList() ?? [];
     interests = data['interests'];
     studentLevel = data['studentLevel'];
   }
+
 }

@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants/constants.dart';
@@ -6,8 +8,9 @@ class CompletedCourseTile extends StatelessWidget {
   final String courseName;
   final String courseImage;
   final int remainingLessons;
+  final String? completionDate;
   const CompletedCourseTile({
-    Key? key, required this.courseName, required this.courseImage, required this.remainingLessons,
+    Key? key, required this.courseName, required this.courseImage, required this.remainingLessons, required this.completionDate,
   }) : super(key: key);
 
   @override
@@ -28,7 +31,8 @@ class CompletedCourseTile extends StatelessWidget {
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
                   image: DecorationImage(
                       fit: BoxFit.cover,
-                      image: AssetImage(courseImage))),
+                      image: CachedNetworkImageProvider(courseImage),
+                  )),
               height: 70.h,
               width: 70.w,
             ),
@@ -45,7 +49,11 @@ class CompletedCourseTile extends StatelessWidget {
                     const SizedBox(
                       height: 5,
                     ),
-                    Text('$remainingLessons lessons left', style: const TextStyle(color: Colors.grey),)
+                    Text('$remainingLessons weeks', style: const TextStyle(color: Colors.grey),),
+                    const SizedBox(
+                      height: 5,
+                    ),
+                    Text('Completed on $completionDate', style: const TextStyle(color: Colors.grey),)
                   ],
                 ),
               ),

@@ -46,11 +46,12 @@ class _HomePageState extends State<HomePage> {
     _courseNotifier = Provider.of<CourseNotifier>(context, listen: false);
     userNotifier = Provider.of<UserNotifier>(context, listen: false);
     _db.getTotalLessons(_courseNotifier);
-    getModels();
-    futureData = getModels();
     valueNotifier = ValueNotifier(0.0);
-    print(user?.email);
-    getForYouList();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getModels();
+      getForYouList();
+    });
+    futureData = getModels();
   }
 
   Future getModels() async{
