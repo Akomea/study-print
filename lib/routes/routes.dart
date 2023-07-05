@@ -34,7 +34,7 @@ class PageRoutes{
       loginRegister: (context) => const LoginRegisterPage(),
       interests:(context) => const SelectInterestsPage(),
       home: (context) => const AppMainNav(),
-      courseInfo: (context) =>  CourseInfoPage(),
+      courseInfo: (context) =>  const CourseInfoPage(),
       userProfile: (context) => const UserProfilePage(),
       forgotPassword: (context) => const ForgotPasswordPage(),
       searchSheet: (context) =>  const SearchSheet(categoryFilterKeyword: CategorySearchFilter.all,),

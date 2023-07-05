@@ -263,9 +263,7 @@ class DatabaseManager {
     return false;
   }
 
-
-
-
+//improve this code to be more efficient  - 2 queries to firebase is not efficient  - 1 query is better - use where in
   Future<void> updateUserCourses(UserNotifier userNotifier,
       CourseNotifier courseNotifier, LessonNotifier lessonNotifier) async {
     var myUser = await FirebaseFirestore.instance

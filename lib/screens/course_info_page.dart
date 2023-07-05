@@ -91,6 +91,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('Classmates: $classmates');
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -133,7 +134,6 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     } catch (e) {
       print(e);
     }
-    setState(() {});
     print(filteredCourses);
     return filteredCourses;
   }
@@ -207,9 +207,6 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
 
     return courseLevelIndex <= userLevel;
   }
-
-
-
 
   Widget _buildDialog() {
     UserNotifier userNotifier = context.watch<UserNotifier>();
@@ -370,11 +367,9 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     }
   }
   void _updateWidget(Course course) {
-    // Your code to update the widget, for example, setState() if using StatefulWidget
       _courseNotifier.currentCourse = course;
       _alreadyEnrolled();
   }
-
 
   @override
   void didChangeDependencies() {
