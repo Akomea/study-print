@@ -479,7 +479,6 @@ class DatabaseManager {
 
       final coursesSnapshot = await coursesQuery.get();
 
-
       for (final courseDoc in coursesSnapshot.docs) {
         final courseLessonsRef = courseDoc.reference.collection('Lessons');
         final snapshot = await courseLessonsRef.get();
@@ -487,16 +486,12 @@ class DatabaseManager {
         for (var document in snapshot.docs) {
           //final data = document as Map<String, dynamic>;
           Lesson lesson = Lesson.fromMap(document.data());
-          //print(lesson.lessonName);
           _lessons.add(lesson);
         }
         lessonNotifier.userLessonsList = _lessons;
       }
     }
-
-
     return _lessons;
-    // print(lessonNotifier.lessonsList);
   }
 
   getClassmates(String courseId, UserNotifier userNotifier) async {

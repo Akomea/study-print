@@ -33,6 +33,7 @@ class _TimetableState extends State<Timetable> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       courses = userNotifier.getCourseIds();
       getLessons();
+
     });
   }
 
@@ -48,7 +49,6 @@ class _TimetableState extends State<Timetable> {
   Widget build(BuildContext context) {
     LessonNotifier lessonNotifier = context.watch<LessonNotifier>();
     lessonsToday = filterLessonsForToday(lessonNotifier.userLessonsList);
-    // print(lessons);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -87,7 +87,7 @@ class _TimetableState extends State<Timetable> {
                 SizedBox(
                   height: 160.h,
                   width: MediaQuery.of(context).size.width,
-                  child: ListView.builder(
+                  child: lessonsToday.isEmpty? const Center(child: Text('No lessons for today'),):ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: lessonsToday.length,
                       itemBuilder: (context, index) {
