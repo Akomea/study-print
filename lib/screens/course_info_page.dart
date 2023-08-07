@@ -252,6 +252,7 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
                   builder: (BuildContext context) {
                     if (Platform.isAndroid) {
                       return androidDialog(
+                        hasConflict: hasConflict,
                         courseNotifier: _courseNotifier,
                         preReqs: preReqs,
                         isMatching: _isCourseLevelMatching(),
@@ -292,12 +293,20 @@ class _CourseInfoPageState extends State<CourseInfoPage> {
     required DatabaseManager db,
     required UserNotifier userNotifier,
     required HomePageNotifier homePageNotifier,
+    required bool? hasConflict,
   }) {
     if (!_canEnroll()) {
       return const AndroidLimitationDialog(
         preReqs: '',
         message:
             'Enrolling on this course will cause you to exceed the 20 hours weekly limit. Please complete some courses before adding more.',
+      );
+    }
+    if (hasConflict??false) {
+      return AndroidLimitationDialog(
+        preReqs: '',
+        message:
+        _conflictMessage,
       );
     }
     if (preReqs.isNotEmpty && !isMatching) {
