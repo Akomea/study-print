@@ -114,6 +114,8 @@ class DatabaseManager {
       required int index,
       required duplicateCount}) async {
     CollectionReference users = FirebaseFirestore.instance.collection('Users');
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
 
     var myUser = await FirebaseFirestore.instance
         .collection('Users')
@@ -266,6 +268,8 @@ class DatabaseManager {
 //improve this code to be more efficient  - 2 queries to firebase is not efficient  - 1 query is better - use where in
   Future<void> updateUserCourses(UserNotifier userNotifier,
       CourseNotifier courseNotifier, LessonNotifier lessonNotifier) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     var myUser = await FirebaseFirestore.instance
         .collection("Users")
         .where("uid", isEqualTo: user?.uid)
@@ -334,6 +338,8 @@ class DatabaseManager {
 
   Future<void> updateUserInterests(
       UserNotifier userNotifier, List updatedList) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     print('received updatedList: $updatedList');
     try {
       var myUser = await FirebaseFirestore.instance
@@ -363,6 +369,8 @@ class DatabaseManager {
 
   Future<void> updateStudentLevel(
       UserNotifier userNotifier, int studentLevel) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     try {
       var myUser = await FirebaseFirestore.instance
           .collection("Users")
@@ -406,6 +414,8 @@ class DatabaseManager {
   }
 
   Future<void> updateLessonDates(List courseIds) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     final coursesRef = FirebaseFirestore.instance.collection('Courses');
 
     final now = DateTime.now();
@@ -444,6 +454,8 @@ class DatabaseManager {
 
   Future<List<Lesson>> getAllLessons(List userCourses,
       LessonNotifier lessonNotifier, UserNotifier userNotifier) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     final courseCollection = FirebaseFirestore.instance.collection('Courses');
     List<Lesson> _lessons = [];
     await updateLessonDates(userNotifier.userCourseIds);
@@ -469,6 +481,8 @@ class DatabaseManager {
 
   Future<List<Lesson>> getUserLessons(List userCourses,
       LessonNotifier lessonNotifier, UserNotifier userNotifier) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     final courseCollection = FirebaseFirestore.instance.collection('Courses');
     List<Lesson> _lessons = [];
     await updateLessonDates(userNotifier.userCourseIds);
@@ -514,6 +528,8 @@ class DatabaseManager {
   }
 
   getTotalLessons(CourseNotifier courseNotifier) async {
+    FirebaseFirestore rootRef = FirebaseFirestore.instance;
+    rootRef.settings = const Settings(persistenceEnabled: true);
     int numLessons = 0;
     try {
       var course = await FirebaseFirestore.instance
