@@ -179,9 +179,9 @@ class _HomePageState extends State<HomePage> {
                               ),//Name and Avatar
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   GestureDetector(
                                     onTap:(){
